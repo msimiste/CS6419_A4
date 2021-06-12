@@ -36,7 +36,7 @@ def getOffsets(sourceFile):
     reserved2, =  struct.unpack('H', f.read(2))
     offset, = struct.unpack('I',f.read(4))
     f.close()   
-    return (magic,size,offset)
+    return offset
     
     #***Extra information about bmp file taken from header****#
     
@@ -115,31 +115,38 @@ def getEmbeddedBinaryString(source,offset,index):
     binaryString = ''.join(str(a) for a in binaryList)
     msg = convertBinaryStringToMessage(binaryString)
     return msg
+    
+
+def hideMessage(sourceFile,message,delimiter,offset):
+    binaryString = convertMessageToBinaryString(message)
+    convertBinaryStringToMessage(binaryString)
+    outFile,extension = os.path.splitext(sourceFile)
+    outFile = outFile + "_embedded" + extension
+    stegoBytes = getBytesToWrite(sourceFile,offset,binaryString,delimiter)
+    embedBytes(sourceFile,stegoBytes,offset,outFile)
+    print("Your Message has been embedded within: {}".format(outFile))
+    
+def extractMessage(sourceFile,delimiter,offset):
+    containsMessage = checkForDelimiter(sourceFile, delimiter)
+    index = getDelimiterIndex(sourceFile,delimiter)
+    
+    if(containsMessage):
+        msg = getEmbeddedBinaryString(sourceFile,offset,index)
+        print("The embedded message is: {}".format(msg))   
+    
 
 def main(args):
     delimiter=bytes("#$#$#$#$",'utf-8')
     command = args[1]
     sourceFile = args[2]
-    magic,size,offset  = getOffsets(sourceFile)    
+    offset = getOffsets(sourceFile)    
     
     if(command == 'h'.lower()):
         message = args[3]
-        binaryString = convertMessageToBinaryString(message)
-        convertBinaryStringToMessage(binaryString)
-        outFile,extension = os.path.splitext(sourceFile)
-        outFile = outFile + "_embedded" + extension
-        stegoBytes = getBytesToWrite(sourceFile,offset,binaryString,delimiter)
-        embedBytes(sourceFile,stegoBytes,offset,outFile)
-        print("Your Message has been embedded within: {}".format(outFile))
-    
+        hideMessage(sourceFile,message,delimiter,offset)  
         
     elif(command == 'e'.lower()):
-        containsMessage = checkForDelimiter(sourceFile, delimiter)
-        index = getDelimiterIndex(sourceFile,delimiter)
-        if(containsMessage):
-            msg = getEmbeddedBinaryString(sourceFile,offset,index)
-            print("The embedded message is: {}".format(msg))
-            
+        extractMessage(sourceFile,delimiter,offset)
      
 if __name__ == '__main__':
     import sys
