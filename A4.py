@@ -28,7 +28,7 @@ import struct
 import os
 
 
-def getOffsets(sourceFile,message):
+def getOffsets(sourceFile):
     f = open(sourceFile,'rb')
     
     magic = f.read(2).decode()
@@ -157,29 +157,54 @@ def embedBytes(inSource,stegoBytes,offset,outSource):
     outFile.write(chunk2)
     inFile.close()
     outFile.close()
+    
+def checkForDelimiter(source,delimiter):
+    f = open(source,'rb')
+    data = f.read()
+    msgIsHidden = delimiter in data
+    if msgIsHidden:
+        f.close()
+        return data.index(delimiter)
+    f.close()
+    return msgIsHidden
+    #print(delimiter, data[:80], embedded)
+
+def getEmbeddedBinaryString(source,offset,index):
+    f = open(source,'rb')
+    f.seek(offset)
+    msgBytes = f.read(index-offset)
+    binaryList = [0 if x%2==0 else 1 for x in msgBytes]
+    binaryString = ''.join(str(a) for a in binaryList)
+    msg = convertBinaryStringToMessage(binaryString)
+    print (msg)
+    
+    
 
 
 def main(args):
     delimiter=bytes("#$#$",'utf-8')
-    #print(bytes(delimiter,'utf-8'))
     command = args[1]
     sourceFile = args[2]
+    
     outFile,extension = os.path.splitext(sourceFile)
-    print(outFile,extension)
+    
     outFile = outFile + "_embedded" + extension
+    
     if(command == 'e'.lower()):
         message = args[3]
-    #print(command in ['e'.lower(),'h'.lower()])
-    #print(sourceFile)
-    #print(message.encode('ascii'))
+    containsMessage = checkForDelimiter(outFile, delimiter)
+    print(containsMessage)
+  
     binaryString = convertMessageToBinaryString(message)
     convertBinaryStringToMessage(binaryString)
-    magic,size,offset  = getOffsets(sourceFile,binaryString)
-    #print("Magic: {0} Size: {1} Offset: {2}".format(magic,size,offset))
-    #print("Msg Length: {}".format(format(len(binaryString),'08b')))
-    stegoBytes = getBytesToWrite(sourceFile,offset,binaryString,delimiter)
-    print(stegoBytes)
-    embedBytes(sourceFile,stegoBytes,offset,outFile)
+    magic,size,offset  = getOffsets(sourceFile)
+    getEmbeddedBinaryString(outFile,offset,containsMessage)
+    #
+    #stegoBytes = getBytesToWrite(sourceFile,offset,binaryString,delimiter)
+    #
+    #embedBytes(sourceFile,stegoBytes,offset,outFile)
+    
+    
     #t = [hex(s) for s in stegoBytes]
     #print(t)
      
