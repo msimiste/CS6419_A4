@@ -130,7 +130,7 @@ def main(args):
         outFile = outFile + "_embedded" + extension
         stegoBytes = getBytesToWrite(sourceFile,offset,binaryString,delimiter)
         embedBytes(sourceFile,stegoBytes,offset,outFile)
-        print("Your Message has been embedded within: {}".format(sourceFile))
+        print("Your Message has been embedded within: {}".format(outFile))
     
         
     elif(command == 'e'.lower()):
